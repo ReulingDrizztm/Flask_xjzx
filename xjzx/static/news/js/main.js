@@ -108,6 +108,29 @@ $(function(){
         }
 
         // 发起登录请求
+        $.post('/user/signin',{
+            'mobile':mobile,
+            'password':password,
+            'csrf_token':$('#csrf_token').val(),
+        },function (data) {
+            if(data.result==1){
+                alert('请输入账号和密码');
+            }else if(data.result==2){
+                alert('用户不存在');
+            }else if(data.result==3){
+                alert('密码不正确');
+            }else if(data.result==4){
+                // 隐藏登陆界面
+                $('.login_form_con').hide();
+                // 隐藏登陆注册按钮
+                $('.user_btns').hide();
+                // 显示用户信息按钮
+                $('.user_login').show();
+                // 显示用户头像和昵称
+                $('#nick_name').html(data.nick_name);
+                $('.lgin_pic').attr('src','/static/news/images/'+data.avatar)
+            }
+        })
     })
 
 
@@ -142,6 +165,33 @@ $(function(){
         }
 
         // 发起注册请求
+        $.post('/user/signup',{
+            'mobile':mobile,
+            'smscode':smscode,
+            'password':password,
+            'csrf_token':$('#csrf_token').val()
+        },function(data){
+            if (data.result==1){
+                alert('请将信息填写完整');
+            }
+            else if (data.result==2){
+                alert('请填写手机验证码');
+            }
+            else if (data.result==3){
+                alert('手机验证码错误');
+            }
+            else if (data.result==4){
+                alert('该手机号已经注册过了，请直接登录');
+            }
+            else if (data.result==5){
+                alert('请输入 6-20位长度的密码');
+            }
+            else if (data.result==6){
+                alert('注册成功！');
+                $('.login_form_con').show();
+                $('.register_form_con').hide();
+            }
+        })
 
     })
 })
@@ -226,4 +276,14 @@ function generateUUID() {
         return (c=='x' ? r : (r&0x3|0x8)).toString(16);
     });
     return uuid;
+}
+
+function signout() {
+    $.get('/user/signout', function (data) {
+        if(data.result==1){
+            alert('退出成功！')
+            $('.user_btns').show();
+            $('.user_login').hide();
+        }
+    });
 }

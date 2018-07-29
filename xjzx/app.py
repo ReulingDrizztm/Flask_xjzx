@@ -46,8 +46,8 @@ def create_app(Config):
     # 注册user蓝图
     app.register_blueprint(user_blueprint)
 
-    # @app.errorhandler(404)
-    # def handle404(e):
-    #     return render_template('404.html')
+    @app.errorhandler(404)
+    def handle404(e):
+        return render_template('news/404.html')
 
     return app

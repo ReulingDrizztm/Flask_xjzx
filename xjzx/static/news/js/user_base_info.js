@@ -25,7 +25,7 @@ $(function () {
             'signature':signature,
             'nick_name':nick_name,
             'gender':gender,
-            'csrf_token':$('#csrf_token').val(),
+            'csrf_token':$('#csrf_token').val()
         },function (data) {
             if(data.result==2){
                 // 成功

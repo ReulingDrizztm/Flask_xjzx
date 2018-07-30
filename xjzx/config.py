@@ -22,6 +22,11 @@ class Config(object):
     # os.path.dirname('')获取文件的目录，如：/home/python/Resource/Flask_xjzx/xjzx/
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+    # 文件保存路径
+    UPLOAD_FILE_PATH = os.path.join(BASE_DIR, 'static/avatars/')
+    # 加入七牛云的访问域名
+    QINIU_URL = 'http://oyvzbpqij.bkt.clouddn.com/'
+
 
 class DevelopConfig(Config):
     DEBUG = True

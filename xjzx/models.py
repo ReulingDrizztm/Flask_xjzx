@@ -36,20 +36,32 @@ class NewsCategory(db.Model, BaseModel):
 
 
 class NewsInfo(db.Model, BaseModel):
+    # 表名
     __tablename__ = 'news_info'
+    # 主键
     id = db.Column(db.Integer, primary_key=True)
-    category_id = db.Column(db.Integer, db.ForeignKey('news_category.id'))
+    # 图片
     pic = db.Column(db.String(50))
+    # 标题
     title = db.Column(db.String(30))
+    # 摘要
     summary = db.Column(db.String(200))
-    context = db.Column(db.Text)
-    user_id = db.Column(db.Integer, db.ForeignKey('user_info.id'))
-    source = db.Column(db.String(20), default='')
+    # 内容
+    content = db.Column(db.Text)
+    # 点击量
     click_count = db.Column(db.Integer, default=0)
+    # 评论量
     comment_count = db.Column(db.Integer, default=0)
+    # 状态，1-待审核，2通过，3拒绝
     status = db.Column(db.SmallInteger, default=1)
+    # 审核被拒绝的原因
     reason = db.Column(db.String(100), default='')
-    comments = db.relationship('NewsComment', backref='news', lazy='dynamic', order_by='NewsComment.id.desc()')
+    # 外键：分类编号
+    category_id = db.Column(db.Integer, db.ForeignKey('news_category.id'))
+    # 外键，作者编号
+    user_id = db.Column(db.Integer, db.ForeignKey('user_info.id'))
+    # 新闻与评论为1对多，在新闻中定义关系属性
+    comments = db.relationship('NewsComment', lazy='dynamic', order_by='NewsComment.id.desc()')
 
     @property
     def pic_url(self):

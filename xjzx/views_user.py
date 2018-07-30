@@ -1,16 +1,31 @@
 import re
-
+import functools
+import random
 from flask import Blueprint, session, make_response, render_template, request, jsonify
 from flask import g
 from flask import redirect
-
-from models import UserInfo, db
+from utils import qiniu_upload
+from models import UserInfo, db, NewsInfo
 from utils.captcha.captcha import captcha
 from utils.ytx_sdk import ytx_send
-
-import random
+from flask import current_app
 
 user_blueprint = Blueprint('user', __name__, url_prefix='/user')
+
+
+# 定义一个装饰器，封装登录验证操作
+def signin_validation(view_fun):
+    @functools.wraps(view_fun)
+    def fun(*args, **kwargs):
+        # 判断用户是否登陆，如果没有登陆直接输入了地址，则重定向到首页去登录
+        if 'user_id' not in session:
+            return redirect('/')
+        # 查询当前登录的用户
+        user_id = session.get('user_id')
+        g.user = UserInfo.query.get(user_id)
+        return view_fun(*args, **kwargs)
+
+    return fun
 
 
 # 图形验证码
@@ -126,7 +141,7 @@ def signin():
         # 状态保持
         session['user_id'] = user.id
         # 密码正确
-        return jsonify(result=4, nick_name=user.nick_name, avatar=user.avatar)
+        return jsonify(result=4, nick_name=user.nick_name, avatar=user.avatar_url)
     else:
         # 密码错误
         return jsonify(result=3)
@@ -143,14 +158,15 @@ def signout():
 
 # 用户中心
 @user_blueprint.route('/')
+@signin_validation
 def index():
     # 判断用户是否登陆，如果没有登陆直接输入了地址，则重定向到首页去登录
-    if 'user_id' not in session:
-        return redirect('/')
-    # 查询当前登录的用户
-    user_id = session.get('user_id')
-    g.user = UserInfo.query.get(user_id)
-    print(user_id)
+    # if 'user_id' not in session:
+    #     return redirect('/')
+    # # 查询当前登录的用户
+    # user_id = session.get('user_id')
+    # g.user = UserInfo.query.get(user_id)
+    # print(user_id)
     return render_template(
         'news/user.html',
         title='用户中心',
@@ -159,12 +175,13 @@ def index():
 
 # 基本资料
 @user_blueprint.route('/base', methods=['GET', 'POST'])
+@signin_validation
 def base():
     # 查询当前用户是否登录，如果没有登录，跳转到首页登录
-    if 'user_id' not in session:
-        return redirect('/')
-    # 获取当前用户的基本信息
-    g.user = UserInfo.query.get(session.get('user_id'))
+    # if 'user_id' not in session:
+    #     return redirect('/')
+    # # 获取当前用户的基本信息
+    # g.user = UserInfo.query.get(session.get('user_id'))
     # 如果是发起的GET请求，返回用户基本信息页面
     if request.method == 'GET':
         return render_template('news/user_base_info.html')
@@ -192,3 +209,70 @@ def base():
 
     # 响应
     return jsonify(result=2)
+
+
+# 头像设置
+@user_blueprint.route('/portrait', methods=['GET', 'POST'])
+@signin_validation
+def portrait():
+    # 如果是GET请求，直接返回头像设置的页面
+    if request.method == 'GET':
+        return render_template('news/user_pic_info.html')
+
+    # 若果是POST请求，以头像的图片作为参数传入，修改头像属性并保存，返回修改后的结果
+    # 接收
+    avatar = request.files.get('avatar')
+
+    # 处理
+    # avatar.save(current_app.config.get('UPLOAD_FILE_PATH') + avatar.filename)
+    # return 'OK'
+    avatar_name = qiniu_upload.upload(avatar)
+    # 响应
+    user = g.user
+    user.avatar = avatar_name
+    # user.avatar = avatar
+    db.session.commit()
+
+    # 响应
+    return jsonify(avatar=user.avatar_url)
+
+
+@user_blueprint.route('/release', methods=['GET', 'POST'])
+@signin_validation
+def release():
+    if request.method == 'GET':
+        return render_template('news/user_news_release.html')
+
+    # 接收
+    # 标题
+    title = request.form.get('title')
+    # 分类
+    category_id = request.form.get('category_id')
+    # 摘要
+    summary = request.form.get('summary')
+    # 内容
+    content = request.form.get('content')
+    # 图片
+    pic = request.files.get('pic')
+
+    # 验证
+    if not all([title, category_id, summary, content, pic]):
+        return render_template(
+            'news/user_news_release.html',
+            msg="还有内容没填写"
+        )
+
+    # 将图片保存到七牛
+    pic_name = qiniu_upload.upload(pic)
+    # 处理
+    news = NewsInfo()
+    news.title = title
+    news.category_id = int(category_id)
+    news.summary = summary
+    news.content = content
+    news.pic = pic_name
+    db.session.add(news)
+    db.session.commit()
+
+    # 响应
+    return redirect('user/news_list.html')

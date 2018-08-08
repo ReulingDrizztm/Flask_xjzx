@@ -18,8 +18,8 @@ def create_app(Config):
 
     db.init_app(app)
 
-    redis_store = redis.StrictRedis(host=Config.REDIS_HOST, port=Config.REDIS_PORT)
-    app.redis_store = redis_store
+    redis_cli = redis.StrictRedis(host=Config.REDIS_HOST, port=Config.REDIS_PORT)
+    app.redis_cli = redis_cli
 
     CSRFProtect(app)
 

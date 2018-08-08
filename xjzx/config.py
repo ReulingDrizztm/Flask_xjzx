@@ -25,7 +25,7 @@ class Config(object):
     # 文件保存路径
     UPLOAD_FILE_PATH = os.path.join(BASE_DIR, 'static/avatars/')
     # 加入七牛云的访问域名
-    QINIU_URL = 'http://oyvzbpqij.bkt.clouddn.com/'
+    QINIU_URL = 'http://pcryp60jw.bkt.clouddn.com/'
 
 
 class DevelopConfig(Config):

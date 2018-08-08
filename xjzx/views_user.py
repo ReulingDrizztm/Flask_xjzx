@@ -5,10 +5,11 @@ from flask import Blueprint, session, make_response, render_template, request, j
 from flask import g
 from flask import redirect
 from utils import qiniu_upload
-from models import UserInfo, db, NewsInfo
+from models import UserInfo, db, NewsInfo, NewsCategory
 from utils.captcha.captcha import captcha
 from utils.ytx_sdk import ytx_send
 from flask import current_app
+from datetime import datetime
 
 user_blueprint = Blueprint('user', __name__, url_prefix='/user')
 
@@ -138,6 +139,23 @@ def signin():
         return jsonify(result=2)
     # 验证密码是否正确
     if user.check_pwd(password):
+
+        # 修改用户的登录时间
+        now = datetime.now()
+        user.update_time = now
+        db.session.commit()
+
+        # 用户每登录一次,活跃次数+1
+        redis_cli = current_app.redis_cli
+        key = 'login' + now.strftime('%Y%m%d')
+        hour = now.hour  # '08:00'
+        if hour < 8:
+            redis_cli.hincrby(key, '08:00', 1)
+        elif hour >= 18:
+            redis_cli.hincrby(key, '19:00', 1)
+        else:  # 当前登录时间为12:30，则计为13:00的登录数量+1
+            redis_cli.hincrby(key, '%02d:00' % (hour + 1), 1)
+
         # 状态保持
         session['user_id'] = user.id
         # 密码正确
@@ -153,6 +171,7 @@ def signout():
     # 退出
     if 'user_id' in session:
         del session['user_id']
+        return redirect('/index')
     return jsonify(result=1)
 
 
@@ -211,6 +230,57 @@ def base():
     return jsonify(result=2)
 
 
+# 修改密码
+@user_blueprint.route('/password', methods=['GET', 'POST'])
+@signin_validation
+def password():
+    # 如果是get请求，就返回修改密码的页面
+    if request.method == 'GET':
+        return render_template('news/user_pass_info.html')
+
+    # 如果是POST请求，就修改密码
+    # 接收
+    initial_password = request.form.get('initial_password')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    # 验证
+    if not all([initial_password, new_password, confirm_password]):
+        return jsonify(result=1)
+
+    # 验证原始密码是否正确
+    # 验证密码是否正确
+    if g.user.check_pwd(initial_password):
+        # 状态保持
+        session['user_id'] = g.user.id
+        # 密码正确
+        # return jsonify(result=2)
+        pass
+    else:
+        # 密码错误
+        return jsonify(result=2)
+
+    # 验证新密码是否和原始密码相同
+    if initial_password == new_password:
+        return jsonify(result=3)
+
+    # 验证确认密码是否和新密码相同
+    if new_password != confirm_password:
+        return jsonify(result=4)
+
+    # 处理
+    # 拿到当前对象
+    user = g.user
+    # 给当前对象赋值
+    user.password = new_password
+    print(password)
+    # 提交，保存修改
+    db.session.commit()
+
+    # 响应
+    return jsonify(result=5)
+
+
 # 头像设置
 @user_blueprint.route('/portrait', methods=['GET', 'POST'])
 @signin_validation
@@ -237,11 +307,14 @@ def portrait():
     return jsonify(avatar=user.avatar_url)
 
 
+# 新闻发布
 @user_blueprint.route('/release', methods=['GET', 'POST'])
 @signin_validation
 def release():
     if request.method == 'GET':
-        return render_template('news/user_news_release.html')
+        # 获取分类
+        category_list = NewsCategory.query.all()
+        return render_template('news/user_news_release.html', category_list=category_list)
 
     # 接收
     # 标题
@@ -271,8 +344,33 @@ def release():
     news.summary = summary
     news.content = content
     news.pic = pic_name
+    news.user_id = g.user.id
     db.session.add(news)
     db.session.commit()
 
+    # 修改作者的发布量
+    user = g.user
+    user.public_count += 1
+    # 更新到数据库
+    db.session.commit()
+
     # 响应
-    return redirect('user/news_list.html')
+    return redirect('/user/news_list.html')
+
+
+# 新闻列表
+@user_blueprint.route('/news_list')
+@signin_validation
+def news_list():
+    page = int(request.args.get('page', 1))
+    pagination = NewsInfo.query.filter_by(user_id=g.user.id).order_by(NewsInfo.id.desc()).paginate(page, 3, False)
+    news_list = pagination.items
+
+    total_page = pagination.pages
+    # 响应
+    return render_template(
+        'news/user_news_list.html',
+        news_list=news_list,
+        total_page=total_page,
+        page=page,
+    )

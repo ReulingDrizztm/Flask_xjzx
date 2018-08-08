@@ -297,17 +297,17 @@ body{
 	color:#39f;
 }
 
-.rank_list li .first{
+.rank_list li .click1{
 	background: #f33;
 	color:#fff;
 }
 
-.rank_list li .second{
+.rank_list li .click2{
 	background:#ff722b;
 	color:#fff;
 }
 
-.rank_list li .third{
+.rank_list li .click3{
 	background:#fa3;
 	color:#fff;
 }
@@ -1002,7 +1002,7 @@ body{
 
 .base_info,.pic_info,.type_info,.pass_info,.my_collect,.release_form,.news_list{
 	width:700px;
-	margin:0px auto;
+	margin:0 auto;
 }
 
 
@@ -1106,7 +1106,7 @@ body{
 
 .article_list li a{
 	line-height:50px;
-	width:450px;
+	width:380px;
 	overflow: hidden;
 	text-overflow:ellipsis;
 	white-space: nowrap;	
@@ -1134,8 +1134,35 @@ body{
 	font-size:14px;
 	color:#999;
 	text-indent:20px;
-	float:right;
+	float:left;
+	margin-left: 30px;
 	background:url(../images/clock.png) left center no-repeat;
+}
+.article_list li .delete{
+	float:right;
+	margin: 13px auto;
+	border: none;
+	background: none;
+}
+
+.article_list li .delete:hover{
+	/*border-color: #bd0915;*/
+	color: #bd0915;
+}
+
+.article_list li .modify{
+	line-height:50px;
+	font-size:14px;
+	margin-left: 20px;
+	color:#333;
+}
+
+.article_list .active .modify{
+	color:#39f;
+}
+
+.article_list li .modify:hover{
+	color:#39f;
 }
 
 .article_list li em{
@@ -1280,7 +1307,7 @@ body{
 
 .form-group .input_multxt2{
 	width:570px;
-	padding:10px 0px;
+	padding:10px 0;
 	height:300px;
 	float:left;
 	margin-top:5px;
@@ -1307,7 +1334,7 @@ body{
 	height:198px;
 	position:absolute;
 	left:-100px;
-	top:0px;
+	top:0;
 }
 
 

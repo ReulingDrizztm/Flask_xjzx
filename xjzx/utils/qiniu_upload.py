@@ -3,10 +3,10 @@ from qiniu import Auth, put_data
 
 def upload(f1):
     # 注册后的账号信息
-    access_key = 'H999S3riCJGPiJOity1GsyWufw3IyoMB6goojo5e'
-    secret_key = 'uOZfRdFtljIw7b8jr6iTG-cC6wY_-N19466PXUAb'
+    access_key = 'G-dOGo2GERjCgDLBOgFey2tdZp-wjyfMM5Y77fJT'
+    secret_key = 'W-lmXF-3C0YnVCB_RDHp7pai7O2RyG_IBZwMhf1_'
     # 空间名称
-    bucket_name = 'itcast20171104'
+    bucket_name = 'python'
     # 构建鉴权对象
     q = Auth(access_key, secret_key)
     # 生成上传 Token

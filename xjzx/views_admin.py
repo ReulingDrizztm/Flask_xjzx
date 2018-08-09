@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from flask import Blueprint, request, render_template
+from flask import Blueprint, request, render_template, jsonify
 from flask import session, redirect, g, current_app
-from models import UserInfo
+from models import UserInfo, NewsCategory, db
 
 admin_blueprint = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -120,4 +120,72 @@ def news_edit_detail():
 # 新闻分类管理--查询
 @admin_blueprint.route('/news_type')
 def news_type():
-    pass
+    return render_template('admin/news_type.html')
+
+
+# 新闻分类管理--显示列表
+@admin_blueprint.route('/news_type_list')
+def news_type_list():
+    # 查询所有分类对象
+    category_list = NewsCategory.query.all()
+    # 将对象转换成字典格式
+    category_list2 = []
+    for category in category_list:
+        category_list2.append({
+            'id': category.id,
+            'name': category.name
+        })
+    # 响应
+    return jsonify(category_list=category_list2)
+
+
+# 新闻分类管理--增加
+@admin_blueprint.route('/news_type_add', methods=['POST'])
+def news_type_add():
+    # 接收参数--用户输入的新闻分类名称
+    name = request.form.get('name')
+
+    # 判断非空
+    if not name:
+        return jsonify(result=1)
+
+    # 判断用户输入的分类是否已经存在
+    if NewsCategory.query.filter_by(name=name).count() > 0:
+        return jsonify(result=2)
+
+    # 处理
+    category = NewsCategory()
+    category.name = name
+    db.session.add(category)
+    db.session.commit()
+
+    # 响应
+    return jsonify(result=3)
+
+
+# 新闻分类管理--编辑
+@admin_blueprint.route('/news_type_edit/<int:category_id>', methods=['POST'])
+def news_type_edit(category_id):
+    # 接收
+    name = request.form.get('name')
+
+    # 验证
+    # 判断非空
+    if not name:
+        return jsonify(result=1)
+
+    # 判断内容是否重复
+    if NewsCategory.query.filter_by(name=name).count() > 0:
+        return jsonify(result=2)
+
+    # 判断分类名称是否已经修改
+    category = NewsCategory.query.get(category_id)
+    if category.name == name:
+        return jsonify(result=3)
+
+    # 处理
+    category.name = name
+    db.session.commit()
+
+    # 响应
+    return jsonify(result=4)

@@ -1,19 +1,19 @@
 from .CCPRestSDK import REST
 
 # 主帐号
-accountSid = '8a216da864a7c9e30164cb42574b1300'
+accountSid = ''
 
 # 主帐号Token
-accountToken = 'f6aca0e0d66d4b75831e2d24252e5eda'
+accountToken = ''
 
 # 应用Id
-appId = '8a216da864a7c9e30164cb4257a81307'
+appId = ''
 
 # 请求地址，格式如下，不需要写http://
 serverIP = 'app.cloopen.com'
 
 # 请求端口
-serverPort = '8883'
+serverPort = ''
 
 # REST版本号
 softVersion = '2013-12-26'
